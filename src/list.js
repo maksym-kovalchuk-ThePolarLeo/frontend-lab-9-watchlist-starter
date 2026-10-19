@@ -9,18 +9,60 @@ import { toggle, watchlist } from './state.js';
 import { openDetails } from './details.js';
 
 export function initList(refresh) {
-    const buttons = document.querySelectorAll('#results button');
-    buttons.forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-            const card = event.target.parentElement;
-            const id = card.dataset.id;
-            if (event.target.dataset.action === 'toggle') {
-                toggle(id);
-                document.querySelector('#watchlist-count').textContent = watchlist.size;
-                refresh();
-            } else if (event.target.dataset.action === 'details') {
-                openDetails(id);
+    const resultsEl = document.querySelector('#results');
+    if (!resultsEl) return;
+
+    resultsEl.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button || !resultsEl.contains(button)) return;
+
+        const card = button.closest('li[data-id]');
+        if (!card) return;
+
+        const id = Number(card.dataset.id);
+        const action = button.dataset.action;
+
+        if (action === 'toggle') {
+            const cardsBefore = Array.from(resultsEl.querySelectorAll('li[data-id]'));
+            const currentIndex = cardsBefore.indexOf(card);
+
+            toggle(id);
+
+            const countEl = document.querySelector('#watchlist-count');
+            if (countEl) {
+                countEl.textContent = String(watchlist.size);
             }
-        });
+
+            if (typeof refresh === 'function') {
+                refresh();
+            }
+
+            const sameCardToggle = resultsEl.querySelector(
+                `li[data-id="${id}"] button[data-action="toggle"]`
+            );
+
+            if (sameCardToggle) {
+                sameCardToggle.focus();
+            } else {
+                const cardsAfter = Array.from(resultsEl.querySelectorAll('li[data-id]'));
+                if (cardsAfter.length > 0) {
+                    const targetIndex = Math.min(currentIndex, cardsAfter.length - 1);
+                    const nextToggleBtn = cardsAfter[targetIndex].querySelector(
+                        'button[data-action="toggle"]'
+                    );
+                    if (nextToggleBtn) nextToggleBtn.focus();
+                } else {
+                    const heading = document.querySelector('#results-heading');
+                    if (heading) {
+                        if (!heading.hasAttribute('tabindex')) {
+                            heading.tabIndex = -1;
+                        }
+                        heading.focus();
+                    }
+                }
+            }
+        } else if (action === 'details') {
+            openDetails(id);
+        }
     });
 }
