@@ -8,10 +8,18 @@
  */
 export function readFilters() {
   const form = document.querySelector('#filters');
+  if (!form) {
+    return { query: '', genre: '', mine: false };
+  }
+
+  const queryField = form.elements.namedItem('query');
+  const genreField = form.elements.namedItem('genre');
+  const mineField = form.elements.namedItem('mine');
+
   return {
-    query: form.elements.query.value,
-    genre: form.elements.genre.value,
-    mine: form.elements.mine.checked,
+    query: queryField ? queryField.value.trim() : '',
+    genre: genreField ? genreField.value : '',
+    mine: mineField ? Boolean(mineField.checked) : false,
   };
 }
 
@@ -23,14 +31,39 @@ export function readFilters() {
  */
 export function initFilters(refresh) {
   const form = document.querySelector('#filters');
-  let timer;
+  if (!form) return;
 
-  form.elements.query.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => refresh(), 300);
+  const queryField = form.elements.namedItem('query');
+  const genreField = form.elements.namedItem('genre');
+  const mineField = form.elements.namedItem('mine');
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
   });
 
-  form.elements.genre.addEventListener('change', () => refresh());
-  form.elements.mine.addEventListener('change', () => refresh());
-  form.addEventListener('reset', () => refresh());
+  if (queryField) {
+    queryField.addEventListener('input', () => {
+      if (typeof refresh === 'function') refresh();
+    });
+  }
+
+  if (genreField) {
+    genreField.addEventListener('change', () => {
+      if (typeof refresh === 'function') refresh();
+    });
+  }
+
+  if (mineField) {
+    mineField.addEventListener('change', () => {
+      if (typeof refresh === 'function') refresh();
+    });
+  }
+
+  form.addEventListener('reset', () => {
+    if (queryField) queryField.value = '';
+    if (genreField) genreField.value = '';
+    if (mineField) mineField.checked = false;
+
+    if (typeof refresh === 'function') refresh();
+  });
 }
